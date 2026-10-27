@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de Ingreso · Campus Norte</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: barra de pestañas fija arriba, una vista a la vez, pensada para el celular del guardia */
+:root{
+  --bg:#f3f6f8; --panel:#ffffff; --ink:#14232e; --muted:#5b6b77; --line:#d9e2e8;
+  --brand:#0f4c81; --ok:#1d8a4e; --okbg:#e3f5ea; --bad:#c2362b; --badbg:#fbe6e4; --warn:#b7791f;
+  --display:"Bricolage Grotesque", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", system-ui, sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--body)}
+header{background:var(--brand);color:#fff;padding:14px 16px 0}
+header h1{font:800 1.3rem var(--display);margin:0}
+header p{margin:2px 0 10px;opacity:.85;font-size:.85rem}
+nav{display:flex;gap:4px;overflow-x:auto}
+nav button{flex:1;min-width:max-content;border:0;background:transparent;color:#fff;opacity:.75;padding:10px 12px;font:700 .95rem var(--body);border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{opacity:1;border-color:#fff}
+main{max-width:760px;margin:0 auto;padding:16px;display:grid;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+h2{font:600 1.15rem var(--display);margin:0 0 10px}
+label{font-weight:700;font-size:.9rem;display:block;margin-bottom:4px}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--panel);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.btn{border:0;border-radius:8px;padding:12px 16px;font:700 1rem var(--body);cursor:pointer;background:var(--brand);color:#fff}
+.btn.sec{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+#lector{width:100%;max-width:360px;margin:0 auto}
+.res{border-radius:12px;padding:16px;display:none}
+.res.ok{display:block;background:var(--okbg);border:2px solid var(--ok)}
+.res.bad{display:block;background:var(--badbg);border:2px solid var(--bad)}
+.res .big{font:800 1.5rem var(--display)}
+.ok .big{color:var(--ok)} .bad .big{color:var(--bad)}
+.foto{width:64px;height:64px;border-radius:50%;background:var(--line);display:grid;place-items:center;font:800 1.4rem var(--display);color:var(--brand);flex:none}
+.persona{display:flex;gap:12px;align-items:center;margin-top:10px}
+.salud{color:var(--warn);font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{text-align:center}.kpi b{display:block;font:800 1.8rem var(--display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:.8rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td,th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);font-size:.92rem}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.pill{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:99px}
+.p-ingreso{background:var(--okbg);color:var(--ok)}.p-salida{background:#e4ecf5;color:var(--brand)}.p-intento_rechazado{background:var(--badbg);color:var(--bad)}
+.carnets{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.carnet{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:var(--panel)}
+.carnet .qr{display:flex;justify-content:center;margin:6px 0;background:#fff;padding:6px;border-radius:6px}
+.small{font-size:.82rem;color:var(--muted)}
+.aviso{background:#fff7e6;border:1px solid #f0d49a;color:#6b4b10;border-radius:8px;padding:10px;font-size:.85rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>Control de Ingreso · Campus Norte</h1>
+  <p>Demo con datos ficticios · Preescolar a 8vo EGB</p>
+  <nav>
+    <button data-v="ingreso" class="on">Ingreso</button>
+    <button data-v="salida">Salida segura</button>
+    <button data-v="panel">Panel del día</button>
+    <button data-v="carnets">Carnets demo</button>
+  </nav>
+</header>
+<main>
+
+<section id="v-ingreso">
+  <div class="card">
+    <h2>Escanear carnet</h2>
+    <div id="lector"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="cam1">Abrir cámara</button>
+    </div>
+    <p class="small">Sin cámara, escribe o elige el código:</p>
+    <div class="row">
+      <select id="cod1"></select>
+      <button class="btn sec" id="reg1">Registrar ingreso</button>
+    </div>
+  </div>
+  <div class="res" id="r1"></div>
+</section>
+
+<section id="v-salida" hidden>
+  <div class="card">
+    <h2>1. Estudiante que sale</h2>
+    <div class="row"><select id="cod2"></select></div>
+    <h2 style="margin-top:14px">2. Adulto que retira</h2>
+    <label for="ced2">Cédula</label>
+    <div class="row">
+      <input id="ced2" inputmode="numeric" placeholder="Ej. 0900000001">
+      <button class="btn" id="ver2">Verificar retiro</button>
+    </div>
+    <p class="small">Prueba: Valentina (Inicial 2) con 0900000012 (niñera autorizada) y luego con 0900000009 (adulto no autorizado).</p>
+  </div>
+  <div class="res" id="r2"></div>
+</section>
+
+<section id="v-panel" hidden>
+  <div class="card">
+    <h2>Hoy en el campus</h2>
+    <div class="kpis">
+      <div class="kpi"><b id="k-pres">–</b><span>presentes</span></div>
+      <div class="kpi"><b id="k-ret">–</b><span>retirados</span></div>
+      <div class="kpi"><b id="k-pct">–</b><span>asistencia</span></div>
+    </div>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <h2>Por grado</h2>
+    <table><thead><tr><th>Grado</th><th>Presentes</th><th style="width:35%"></th><th>Retirados</th></tr></thead><tbody id="t-grados"></tbody></table>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <h2>Últimos movimientos</h2>
+    <table><tbody id="t-mov"></tbody></table>
+  </div>
+  <div class="row"><button class="btn sec" id="refrescar">Actualizar</button><button class="btn sec" id="reiniciar">Reiniciar demo</button></div>
+</section>
+
+<section id="v-carnets" hidden>
+  <div class="aviso">Muestra estos carnets en otra pantalla o imprímelos y escanéalos desde la pestaña Ingreso. Cada QR solo contiene un código, nunca datos personales.</div>
+  <div class="card">
+    <h2>Simular carnet extraviado</h2>
+    <div class="row"><select id="cod3"></select><button class="btn sec" id="perder">Reportar como extraviado</button></div>
+    <p class="small">Después intenta escanearlo: el sistema lo rechaza y deja registro.</p>
+  </div>
+  <div class="carnets" id="carnets"></div>
+</section>
+
+</main>
+<script>
+const URL_SB="https://fyfqvwvwqnowdzusggaw.supabase.co";
+const KEY="sb_publishable_kiPhw0fDyKdkMUd5k0cGaA_yTBteMLP";
+const EST=[["CN-2027-0001","Valentina Demo Andrade","Inicial 2"],["CN-2027-0002","Mateo Demo Cedeño","Inicial 2"],["CN-2027-0003","Isabella Demo Mora","1ro EGB"],["CN-2027-0004","Santiago Demo Vera","2do EGB"],["CN-2027-0005","Camila Demo Zambrano","3ro EGB"],["CN-2027-0006","Sebastián Demo Ortiz","4to EGB"],["CN-2027-0007","Lucía Demo Paredes","5to EGB"],["CN-2027-0008","Daniel Demo Salazar","6to EGB"],["CN-2027-0009","Emilia Demo Torres","7mo EGB"],["CN-2027-0010","Joaquín Demo Bravo","8vo EGB"]];
+const $=id=>document.getElementById(id);
+async function rpc(fn,args){
+  const r=await fetch(`${URL_SB}/rest/v1/rpc/${fn}`,{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify(args||{})});
+  if(!r.ok) throw new Error("No se pudo conectar con la base de datos ("+r.status+")");
+  const t=await r.text(); return t?JSON.parse(t):null;
+}
+const ini=n=>n.split(" ").filter((_,i)=>i!==1).map(p=>p[0]).join("").slice(0,2);
+["cod1","cod2","cod3"].forEach(id=>$(id).innerHTML=EST.map(e=>`<option value="QR-${e[0]}">${e[1]} · ${e[2]}</option>`).join(""));
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("main>section").forEach(s=>s.hidden=s.id!=="v-"+b.dataset.v);
+  if(b.dataset.v==="panel") cargarPanel();
+});
+
+function mostrar(el,ok,html){el.className="res "+(ok?"ok":"bad");el.innerHTML=html;el.scrollIntoView({behavior:"smooth",block:"nearest"})}
+
+async function ingreso(codigo){
+  try{
+    const d=await rpc("cn_escanear",{p_codigo:codigo,p_tipo:"ingreso"});
+    if(!d.ok) return mostrar($("r1"),false,`<div class="big">✕ Rechazado</div><p>${d.mensaje}</p>`);
+    const e=d.estudiante, n=e.nombres+" "+e.apellidos;
+    const hora=new Date().toLocaleTimeString("es-EC",{hour:"2-digit",minute:"2-digit"});
+    mostrar($("r1"),true,`<div class="big">✓ Ingreso registrado ${hora}</div>
+      <div class="persona"><div class="foto">${ini(n)}</div><div><b>${n}</b><br>${e.grado}${e.notas_salud?`<br><span class="salud">⚠ ${e.notas_salud}</span>`:""}</div></div>
+      <p class="small">Se notificaría al representante en este momento.</p>`);
+  }catch(err){mostrar($("r1"),false,`<div class="big">Sin conexión</div><p>${err.message}</p>`)}
+}
+$("reg1").onclick=()=>ingreso($("cod1").value);
+
+let lector=null,ultimo="",tUlt=0;
+$("cam1").onclick=async()=>{
+  if(lector){await lector.stop();lector=null;$("cam1").textContent="Abrir cámara";return}
+  try{
+    lector=new Html5Qrcode("lector");
+    await lector.start({facingMode:"environment"},{fps:10,qrbox:220},txt=>{
+      const now=Date.now(); if(txt===ultimo&&now-tUlt<4000) return; ultimo=txt;tUlt=now; ingreso(txt);
+    });
+    $("cam1").textContent="Cerrar cámara";
+  }catch(e){lector=null;mostrar($("r1"),false,`<div class="big">Cámara no disponible</div><p>Permite el acceso a la cámara o usa la selección manual.</p>`)}
+};
+
+$("ver2").onclick=async()=>{
+  const ced=$("ced2").value.trim(); if(!ced) return $("ced2").focus();
+  const est=EST.find(e=>"QR-"+e[0]===$("cod2").value);
+  try{
+    const d=await rpc("cn_verificar_salida",{p_codigo:$("cod2").value,p_cedula:ced});
+    mostrar($("r2"),d.ok,`<div class="big">${d.ok?"✓ RETIRO AUTORIZADO":"✕ NO AUTORIZADO"}</div>
+      <div class="persona"><div class="foto">${ini(est[1])}</div><div><span class="small">Estudiante</span><br><b>${est[1]}</b> · ${est[2]}</div></div>
+      <div class="persona"><div class="foto">${d.adulto==="No registrado"?"?":ini(d.adulto)}</div><div><span class="small">Adulto · cédula ${ced}</span><br><b>${d.adulto}</b>${d.parentesco?" · "+d.parentesco:""}</div></div>
+      <p>${d.ok?"El guardia confirma que la foto coincide con la persona presente.":"Retener al estudiante, llamar a coordinación y al representante. Intento registrado."}</p>`);
+  }catch(err){mostrar($("r2"),false,`<div class="big">Sin conexión</div><p>${err.message}</p>`)}
+};
+
+async function cargarPanel(){
+  try{
+    const d=await rpc("cn_panel");
+    const pres=d.grados.reduce((a,g)=>a+g.presentes,0), ret=d.grados.reduce((a,g)=>a+g.retirados,0);
+    $("k-pres").textContent=pres;$("k-ret").textContent=ret;$("k-pct").textContent=Math.round(pres/d.total*100)+"%";
+    $("t-grados").innerHTML=d.grados.map(g=>`<tr><td>${g.nombre}</td><td>${g.presentes} / ${g.total}</td><td><div class="bar"><i style="width:${g.total?g.presentes/g.total*100:0}%"></i></div></td><td>${g.retirados}</td></tr>`).join("");
+    const et={ingreso:"Ingreso",salida:"Salida",intento_rechazado:"Rechazado"};
+    $("t-mov").innerHTML=d.recientes.map(m=>`<tr><td>${m.hora}</td><td><span class="pill p-${m.tipo}">${et[m.tipo]}</span></td><td>${m.estudiante||""}${m.observacion?`<br><span class="small">${m.observacion}</span>`:""}</td></tr>`).join("");
+  }catch(err){$("t-grados").innerHTML=`<tr><td>${err.message}</td></tr>`}
+}
+$("refrescar").onclick=cargarPanel;
+$("reiniciar").onclick=async()=>{await rpc("cn_demo_reiniciar");cargarPanel()};
+$("perder").onclick=async()=>{await rpc("cn_demo_desactivar",{p_codigo:$("cod3").value});$("perder").textContent="Reportado ✓";setTimeout(()=>$("perder").textContent="Reportar como extraviado",2000)};
+
+$("carnets").innerHTML=EST.map((e,i)=>`<div class="carnet"><b>${e[1]}</b><div class="small">${e[2]}</div><div class="qr" id="qr${i}"></div><div class="small">${e[0]}</div></div>`).join("");
+EST.forEach((e,i)=>new QRCode($("qr"+i),{text:"QR-"+e[0],width:120,height:120}));
+</script>
+</body>
+</html>
