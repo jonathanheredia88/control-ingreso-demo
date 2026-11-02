@@ -70,7 +70,7 @@ export const sumarDias = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.
 
 // Arranca la app cuando hay sesión; si no, muestra el acceso por correo.
 export function conSesion({ contenedor, titulo, subtitulo, alEntrar }) {
-  let actual = null;
+  let actual; // undefined: aún no se ha decidido qué pantalla mostrar
   sb.auth.onAuthStateChange((evento, sesion) => {
     const id = sesion?.user?.id ?? null;
     if (id === actual) return;
