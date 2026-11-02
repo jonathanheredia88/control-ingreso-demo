@@ -93,38 +93,54 @@ function pantallaAcceso(el, titulo, subtitulo) {
     <form id="f-acceso" novalidate>
       <div class="campo"><label for="acc-email">Tu correo</label>
         <input id="acc-email" type="email" inputmode="email" autocomplete="email" required placeholder="nombre@correo.com"></div>
-      <button class="btn" style="width:100%" id="acc-btn">Enviarme un enlace de acceso</button>
-      <p class="small">Sin contraseñas: te enviamos un enlace seguro a tu correo.</p>
+      <button class="btn" style="width:100%" id="acc-btn">Enviarme un código de acceso</button>
+      <p class="small">Sin contraseñas: te enviamos un código a tu correo.</p>
     </form>
     <div id="acc-enviado" hidden>
-      <p><b>Revisa tu correo.</b> Te enviamos un enlace para entrar a <span id="acc-a"></span>. Puede tardar un minuto; revisa también «No deseado».</p>
-      <details><summary class="small">¿Recibiste un código de 6 dígitos?</summary>
-        <form id="f-codigo" class="row" style="margin-top:8px">
-          <input id="acc-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
-          <button class="btn sec">Entrar</button>
-        </form></details>
-      <p><button class="btn sec chico" id="acc-otro">Usar otro correo</button></p>
+      <p><b>Revisa tu correo.</b> Enviamos un código a <span id="acc-a"></span>. Puede tardar un minuto; revisa también «No deseado».</p>
+      <form id="f-codigo">
+        <label for="acc-codigo">Escribe el código del correo</label>
+        <div class="row">
+          <input id="acc-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="123456" style="font-size:1.4rem;letter-spacing:.3em;text-align:center">
+          <button class="btn" id="acc-entrar">Entrar</button>
+        </div>
+      </form>
+      <p class="small">En la computadora también puedes tocar el enlace del correo. En el celular, mejor usa el código: así entras directo a la app.</p>
+      <p class="row"><button class="btn sec chico" id="acc-reenviar">Reenviar código</button><button class="btn sec chico" id="acc-otro">Usar otro correo</button></p>
     </div>
     <div id="acc-err" class="error" hidden role="alert"></div>
   </div></div>`;
   const err = (m) => { $("acc-err").hidden = !m; $("acc-err").textContent = m || ""; };
   let email = "";
+  const enviar = async () => {
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    if (!error) return true;
+    const espera = error.message.match(/(\d+)\s*seconds?/);
+    err(/rate|limit|seconds/i.test(error.message)
+      ? `Ya enviamos un código hace poco${espera ? ` (podrás pedir otro en ${espera[1]} segundos)` : ""}. Si ya te llegó, escríbelo en la casilla.`
+      : "No pudimos enviar el código: " + error.message);
+    return /rate|limit|seconds/i.test(error.message); // con límite igual mostramos la casilla del código
+  };
   $("f-acceso").onsubmit = async (e) => {
     e.preventDefault(); err("");
     email = $("acc-email").value.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return err("Escribe un correo válido.");
     $("acc-btn").disabled = true; $("acc-btn").textContent = "Enviando…";
-    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-    $("acc-btn").disabled = false; $("acc-btn").textContent = "Enviarme un enlace de acceso";
-    if (error) return err(/rate|limit|seconds/i.test(error.message)
-      ? "Ya enviamos un enlace hace poco. Espera un minuto antes de pedir otro."
-      : "No pudimos enviar el enlace: " + error.message);
+    const ok = await enviar();
+    $("acc-btn").disabled = false; $("acc-btn").textContent = "Enviarme un código de acceso";
+    if (!ok) return;
     $("f-acceso").hidden = true; $("acc-enviado").hidden = false; $("acc-a").textContent = email;
+    $("acc-codigo").focus();
   };
+  $("acc-reenviar").onclick = async () => { err(""); if (await enviar()) toast("Te enviamos un código nuevo"); };
   $("f-codigo").onsubmit = async (e) => {
     e.preventDefault(); err("");
-    const { error } = await sb.auth.verifyOtp({ email, token: $("acc-codigo").value.trim(), type: "email" });
-    if (error) err("El código no es válido o ya venció.");
+    const token = $("acc-codigo").value.replace(/\D/g, "");
+    if (token.length < 6) return err("Escribe el código completo que llegó a tu correo.");
+    $("acc-entrar").disabled = true;
+    const { error } = await sb.auth.verifyOtp({ email, token, type: "email" });
+    $("acc-entrar").disabled = false;
+    if (error) err("El código no es válido o ya venció. Pide uno nuevo con «Reenviar código».");
   };
-  $("acc-otro").onclick = () => { $("f-acceso").hidden = false; $("acc-enviado").hidden = true; };
+  $("acc-otro").onclick = () => { err(""); $("f-acceso").hidden = false; $("acc-enviado").hidden = true; };
 }
