@@ -2,100 +2,28 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Control de Ingreso · Campus Norte</title>
-<meta name="theme-color" content="#0f4c81">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-<link rel="stylesheet" href="css/app.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo retirada · Campus Norte</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#f3f6f8;--panel:#fff;--ink:#14232e;--muted:#5b6b77;--brand:#0f4c81;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0f171d;--panel:#17222b;--ink:#e8eef2;--muted:#9fb0bc;--brand:#4f9ae0;color-scheme:dark}}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif;padding:16px;box-sizing:border-box}
+main{max-width:440px;background:var(--panel);border-radius:14px;padding:28px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+h1{color:var(--brand);font-size:1.4rem;margin:0 0 8px}p{margin:0 0 12px}.small{color:var(--muted);font-size:.88rem}
+</style>
 </head>
 <body>
-<div id="acceso" hidden></div>
-
-<div data-app hidden>
-<header class="top">
-  <div class="fila">
-    <div>
-      <h1>Control de Ingreso · Campus Norte</h1>
-      <p>Personal de puerta y coordinación</p>
-    </div>
-    <div class="usuario"><span id="quien"></span><br><button id="salir">Cerrar sesión</button></div>
-  </div>
-  <nav class="tabs" aria-label="Secciones">
-    <button data-v="ingreso" class="on">Ingreso</button>
-    <button data-v="salida">Salida segura</button>
-    <button data-v="panel">Panel del día</button>
-    <button data-v="carnets" data-rol="coordinacion" hidden>Carnets</button>
-  </nav>
-</header>
 <main>
-
-<section id="v-ingreso">
-  <div class="card">
-    <h2>Escanear carnet</h2>
-    <div id="lector"></div>
-    <div class="row" style="margin-top:10px"><button class="btn" id="cam1">Abrir cámara</button></div>
-    <h3 style="margin-top:16px">Ingreso manual (olvidó o perdió el carnet)</h3>
-    <div class="row">
-      <select id="est1" aria-label="Estudiante"></select>
-      <button class="btn sec" id="buscar1">Buscar estudiante</button>
-    </div>
-  </div>
-  <div class="res" id="r1" aria-live="polite"></div>
-</section>
-
-<section id="v-salida" hidden>
-  <div class="card">
-    <h2>1. Estudiante que sale</h2>
-    <select id="est2" aria-label="Estudiante que sale"></select>
-    <h2 style="margin-top:16px">2. Adulto que retira</h2>
-    <label for="ced2">Cédula (10 dígitos)</label>
-    <form class="row" id="f-salida">
-      <input id="ced2" inputmode="numeric" autocomplete="off" maxlength="10" pattern="[0-9]{10}" placeholder="Ej. 0900000001">
-      <button class="btn" id="ver2">Verificar retiro</button>
-    </form>
-    <p class="small">Demo: registra primero el ingreso de Valentina. Luego retírala con 0900000012 (niñera autorizada) o prueba con 0900000009 (adulto no autorizado).</p>
-  </div>
-  <div class="res" id="r2" aria-live="polite"></div>
-</section>
-
-<section id="v-panel" hidden>
-  <div class="card">
-    <h2>Hoy en el campus</h2>
-    <div class="kpis">
-      <div class="kpi"><b id="k-pres">–</b><span>en el campus</span></div>
-      <div class="kpi"><b id="k-ret">–</b><span>retirados</span></div>
-      <div class="kpi"><b id="k-aus">–</b><span>sin registro</span></div>
-      <div class="kpi" id="k-rech-box"><b id="k-rech">–</b><span>alertas</span></div>
-    </div>
-    <p class="small" id="k-act">Se actualiza solo cada 20 segundos.</p>
-  </div>
-  <div class="card tabla">
-    <h2>Por grado</h2>
-    <table><thead><tr><th>Grado</th><th>En campus</th><th style="width:35%"></th><th>Retirados</th></tr></thead><tbody id="t-grados"></tbody></table>
-  </div>
-  <div class="card tabla">
-    <h2>Movimientos de hoy</h2>
-    <table><tbody id="t-mov"></tbody></table>
-  </div>
-  <div class="row no-print">
-    <button class="btn sec" id="refrescar">Actualizar ahora</button>
-    <button class="btn sec" id="reiniciar" data-rol="coordinacion" hidden>Reiniciar demo</button>
-  </div>
-</section>
-
-<section id="v-carnets" hidden>
-  <div class="aviso no-print">Cada QR contiene solo un código aleatorio, nunca datos personales. Si se reporta un carnet como extraviado, deja de funcionar al instante; al reemitirlo se genera un código nuevo.</div>
-  <div class="row no-print"><button class="btn sec" id="imprimir">Imprimir carnets</button></div>
-  <div class="carnets" id="carnets"></div>
-</section>
-
+  <img src="icons/icon-192.png" alt="" width="56" height="56" style="border-radius:12px">
+  <h1>Esta demo fue retirada</h1>
+  <p>El control de ingreso, la salida segura y los avisos a las familias ahora forman parte de <b>ANAI Comunica · Campus Norte</b>.</p>
+  <p class="small">Si instalaste esta demo en tu celular, puedes eliminar el ícono de la pantalla de inicio.</p>
 </main>
-</div>
-<script type="module" src="js/personal.js"></script>
+<script>
+// Desinstala el service worker de la demo y borra su caché
+if ("serviceWorker" in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k)));
+</script>
 </body>
 </html>
