@@ -2,99 +2,28 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Familias · Campus Norte</title>
-<meta name="description" content="Portal de familias de Campus Norte: ingresos, salidas, pases de retiro y avisos.">
-<meta name="theme-color" content="#0f4c81">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Campus Norte">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-<link rel="stylesheet" href="css/app.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo retirada · Campus Norte</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#f3f6f8;--panel:#fff;--ink:#14232e;--muted:#5b6b77;--brand:#0f4c81;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0f171d;--panel:#17222b;--ink:#e8eef2;--muted:#9fb0bc;--brand:#4f9ae0;color-scheme:dark}}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif;padding:16px;box-sizing:border-box}
+main{max-width:440px;background:var(--panel);border-radius:14px;padding:28px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+h1{color:var(--brand);font-size:1.4rem;margin:0 0 8px}p{margin:0 0 12px}.small{color:var(--muted);font-size:.88rem}
+</style>
 </head>
-<body class="portal">
-<div id="acceso" hidden></div>
-
-<div data-app hidden>
-<header class="top" style="padding-bottom:12px">
-  <div class="fila">
-    <div><h1>Campus Norte · Familias</h1></div>
-    <button class="btn chico" id="instalar" hidden style="background:#fff;color:#0f4c81">Instalar app</button>
-  </div>
-</header>
-
+<body>
 <main>
-  <div class="saludo"><h1 id="saludo">Hola</h1><p id="fecha"></p></div>
-  <div id="alertas"></div>
-
-  <section id="v-hoy"><div id="hijos" class="hijo-lista" style="display:grid;gap:16px"></div></section>
-
-  <section id="v-historial" hidden>
-    <div class="card">
-      <h2>Historial de asistencia</h2>
-      <div class="chips" id="hist-hijos"></div>
-      <p id="hist-resumen" class="small" style="margin:12px 0 0"></p>
-    </div>
-    <div class="card tabla"><table class="dias"><thead><tr><th>Día</th><th>Llegó</th><th>Salió</th></tr></thead><tbody id="hist-tabla"></tbody></table></div>
-  </section>
-
-  <section id="v-retiros" hidden>
-    <div class="card">
-      <h2>Pase temporal de retiro</h2>
-      <p class="small" style="margin-top:0">¿Otra persona recogerá a tu hijo? Créale un pase. Vale solo para el día que elijas y para un único retiro. En la puerta deberá mostrar su cédula.</p>
-      <form id="f-pase" novalidate>
-        <div class="campo" id="pase-hijos-box"><label>¿A quién retira?</label><div class="chips" id="pase-hijos"></div></div>
-        <div class="campo"><label for="pase-nombre">Nombre completo</label><input id="pase-nombre" autocomplete="off" maxlength="80" placeholder="Ej. Pedro Andrade López"></div>
-        <div class="row">
-          <div class="campo"><label for="pase-cedula">Cédula</label><input id="pase-cedula" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="10 dígitos"></div>
-          <div class="campo"><label for="pase-par">Relación</label><input id="pase-par" list="parentescos" maxlength="40" placeholder="Ej. Tío"></div>
-        </div>
-        <datalist id="parentescos"><option>Tío</option><option>Tía</option><option>Abuelo</option><option>Abuela</option><option>Hermano mayor</option><option>Vecino/a</option><option>Amigo/a de la familia</option><option>Transporte escolar</option></datalist>
-        <div class="campo"><label>¿Qué día?</label>
-          <div class="chips" id="pase-dias"></div>
-          <input type="date" id="pase-fecha" style="margin-top:8px" aria-label="Otra fecha">
-        </div>
-        <div id="pase-err" class="error" hidden role="alert"></div>
-        <button class="btn" style="width:100%" id="pase-btn">Crear pase</button>
-      </form>
-    </div>
-    <div id="retiros-lista" style="display:grid;gap:16px"></div>
-  </section>
-
-  <section id="v-avisos" hidden>
-    <div class="card">
-      <h2>Notificaciones en este celular</h2>
-      <p class="small" id="push-estado" style="margin-top:0"></p>
-      <div class="row"><button class="btn" id="push-btn">Activar notificaciones</button></div>
-      <div class="aviso" id="ios-ayuda" hidden style="margin-top:12px">En iPhone, primero agrega el portal a tu pantalla de inicio: toca <b>Compartir</b> → <b>Agregar a inicio</b>. Luego ábrelo desde ese ícono y activa las notificaciones.</div>
-    </div>
-    <div class="card">
-      <h2>¿Cómo quieres enterarte?</h2>
-      <label class="interruptor"><span>Correo electrónico<br><span class="small" id="pref-correo"></span></span><input type="checkbox" id="pref-email"></label>
-      <label class="interruptor"><span>Notificaciones push<br><span class="small">En los dispositivos donde las actives</span></span><input type="checkbox" id="pref-push"></label>
-      <p class="small">Las alertas de seguridad (por ejemplo, un intento de retiro no autorizado) siempre te llegarán, aunque desactives los avisos.</p>
-      <button class="btn sec" id="prueba">Enviarme un aviso de prueba</button>
-    </div>
-    <div class="card">
-      <h2>Tu cuenta</h2>
-      <p class="small" id="cuenta"></p>
-      <div class="row"><button class="btn sec" id="salir">Cerrar sesión</button></div>
-    </div>
-  </section>
+  <img src="icons/icon-192.png" alt="" width="56" height="56" style="border-radius:12px">
+  <h1>Esta demo fue retirada</h1>
+  <p>El control de ingreso, la salida segura y los avisos a las familias ahora forman parte de <b>ANAI Comunica · Campus Norte</b>.</p>
+  <p class="small">Si instalaste esta demo en tu celular, puedes eliminar el ícono de la pantalla de inicio.</p>
 </main>
-
-<nav class="bottom" aria-label="Secciones">
-  <div>
-    <button data-v="hoy" class="on"><span aria-hidden="true">🏫</span>Hoy</button>
-    <button data-v="historial"><span aria-hidden="true">📅</span>Historial</button>
-    <button data-v="retiros"><span aria-hidden="true">🧑‍🤝‍🧑</span>Retiros</button>
-    <button data-v="avisos"><span aria-hidden="true">🔔</span>Avisos</button>
-  </div>
-</nav>
-</div>
-<script type="module" src="js/padre.js"></script>
+<script>
+// Desinstala el service worker de la demo y borra su caché
+if ("serviceWorker" in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k)));
+</script>
 </body>
 </html>
