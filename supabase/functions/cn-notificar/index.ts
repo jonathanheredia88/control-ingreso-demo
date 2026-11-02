@@ -78,7 +78,7 @@ async function procesar() {
   const from = Deno.env.get("MAIL_FROM") ?? s.cn_mail_from ?? "Campus Norte <onboarding@resend.dev>";
   const portal = Deno.env.get("PORTAL_URL") ?? s.cn_portal_url ??
     "https://jonathanheredia88.github.io/control-ingreso-demo/padre.html";
-  const subject = Deno.env.get("VAPID_SUBJECT") ?? s.cn_vapid_subject ?? "mailto:avisos@campusnorte.example";
+  const subject = Deno.env.get("VAPID_SUBJECT") ?? s.cn_vapid_subject ?? "mailto:avisos@atlasaula.com";
 
   const lote = await sql`
     update campus_norte.notificaciones n set estado = 'procesando', intentos = intentos + 1
@@ -132,7 +132,9 @@ async function procesar() {
         await sql`delete from campus_norte.push_suscripciones where endpoint = ${n.destino}`;
         estado = "omitida"; error = "Suscripción vencida: se eliminó el dispositivo";
       } else {
-        estado = "error"; error = String((e as Error)?.message ?? e).slice(0, 300);
+        const body = (e as { body?: string }).body;
+        estado = "error";
+        error = `${status ?? ""} ${String((e as Error)?.message ?? e)} ${body ?? ""}`.trim().slice(0, 300);
       }
     }
     // Reintento: un error transitorio vuelve a 'pendiente' hasta 3 intentos
